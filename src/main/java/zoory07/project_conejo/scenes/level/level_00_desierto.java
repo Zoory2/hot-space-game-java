@@ -140,6 +140,7 @@ public class level_00_desierto {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 50));
             g.drawString("GAME OVER", 300, 300); // Ajustar la posición
+            g.drawString("Reiniciar(Enter)", 250, 350);
         }
     }
 

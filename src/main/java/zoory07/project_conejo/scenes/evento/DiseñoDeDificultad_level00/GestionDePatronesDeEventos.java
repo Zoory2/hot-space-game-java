@@ -22,7 +22,7 @@ public class GestionDePatronesDeEventos {
         this.dificultad = 1; // Nivel de dificultad inicial
         this.tiempoInicio = System.currentTimeMillis(); // Guardar el tiempo de inicio
         this.tiempoUltimaGeneracion = tiempoInicio; // Inicializar el tiempo de última generación
-        this.intervaloGeneracion = 360; // Intervalo de generación en milisegundos (2 segundos)
+        this.intervaloGeneracion = 500; // Intervalo de generación en milisegundos (2 segundos)
     }
 
     public void incrementarDificultad() {
