@@ -26,7 +26,7 @@ public class Main extends Canvas {
     public static final int WIDTH = 300;
     public static final int HEIGHT = 200;
     public static final int SCALE = 3;
-    public static String NAME = "HotSpace 1.0b";
+    public static String NAME = "HotSpace 1.0.1b";
 
     private JFrame Ventana;
     public boolean running = false;
@@ -192,6 +192,7 @@ public class Main extends Canvas {
     public void Update() {
         if (!enMenu) {
             lvl_desierto.update();
+            teclado.update();
         }
     }
 
