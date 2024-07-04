@@ -10,7 +10,7 @@ import java.awt.event.KeyListener;
 public class teclado implements KeyListener {
 
     private boolean[] teclas = new boolean[256]; 
-    public boolean izquierda, derecha, arriba, abajo, enter;
+    public boolean izquierda, derecha, arriba, abajo, enter, pausa;
     
 
     
@@ -20,6 +20,7 @@ public class teclado implements KeyListener {
         arriba = teclas[KeyEvent.VK_UP] || teclas[KeyEvent.VK_W];
         abajo = teclas[KeyEvent.VK_DOWN] || teclas[KeyEvent.VK_S];  
         enter = teclas[KeyEvent.VK_ENTER];
+        pausa = teclas[KeyEvent.VK_ESCAPE];
         /*if (enter) {
             System.out.println("Tecla ENTER presionada"); 
         }*/

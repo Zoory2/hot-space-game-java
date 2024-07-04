@@ -18,15 +18,13 @@ import main.java.zoory07.project_conejo.scenes.level.level_00_desierto;
 import main.java.zoory07.project_conejo.game.teclado;
 import main.java.zoory07.project_conejo.scenes.evento.tiempo;
 import main.java.zoory07.project_conejo.scenes.menus.Inicio_menu;
-
-
-
+import main.java.zoory07.project_conejo.scenes.menus.menu_pausa;
 
 public class Main extends Canvas {
     public static final int WIDTH = 300;
     public static final int HEIGHT = 200;
     public static final int SCALE = 3;
-    public static String NAME = "HotSpace 1.0b";
+    public static String NAME = "HotSpace 1.0";
 
     private JFrame Ventana;
     public boolean running = false;
@@ -42,9 +40,15 @@ public class Main extends Canvas {
     private tiempo tiempo;
     private Inicio_menu inicio_menu;
 
-    private boolean enMenu = true;
+    private EstadoJuego estadoJuego; // Emu
+    private int delayEnter = 0; // Añadido para manejar el retraso
 
-    
+    private enum EstadoJuego {
+        MENU,
+        JUEGO,
+        PAUSA
+    }
+
     public void Game() throws IOException {
         setMinimumSize(new Dimension(WIDTH * SCALE, HEIGHT * SCALE));
         setMaximumSize(new Dimension(WIDTH * SCALE, HEIGHT * SCALE));
@@ -69,17 +73,17 @@ public class Main extends Canvas {
         tiempo = new tiempo();
         tiempo.iniciar();
 
-        // Inicializar inicio_menu
-        inicio_menu = new Inicio_menu(0, 0);
-
         Sprite();
         Ecenas();
         CentrarPantallaPlayer();
+
+        estadoJuego = EstadoJuego.MENU; // Iniciar en el menú principal
+        System.out.println("Estado inicial: " + estadoJuego);
     }
 
     public void Sprite() throws IOException {
         try {
-            File archivoImagen = new File("src/main/java/resources/SpriteSheet.png");
+            File archivoImagen = new File("resource/SpriteSheet.png");
             BufferedImage hojaSprites = ImageIO.read(archivoImagen);
             spriteSheet = new SpriteSheet(hojaSprites);
 
@@ -94,9 +98,10 @@ public class Main extends Canvas {
             long frameDuracion = 100;
             this.player = new player(0, 0, correrFrames, teclado, frameDuracion);
             addKeyListener(this.teclado);
+            System.out.println("Sprite inicializado correctamente");
         } catch (IOException e) {
             e.printStackTrace();
-            return;
+            System.out.println("Error al cargar la imagen del sprite");
         }
     }
 
@@ -105,6 +110,10 @@ public class Main extends Canvas {
     }
 
     public void CentrarPantallaPlayer() {
+        if (player == null) {
+            System.out.println("Error: Player no está inicializado");
+            return;
+        }
         int ventanaAncho = getWidth();
         int ventanaAlto = getHeight();
         int playerAncho = player.getWidth();
@@ -141,7 +150,7 @@ public class Main extends Canvas {
             Render();
             frame++;
 
-            if (System.currentTimeMillis() - timer > 100) {
+            if (System.currentTimeMillis() - timer > 1000) {
                 timer += 1000;
                 System.out.println("FPS: " + frame + ", Ticks: " + updates);
                 frame = 0;
@@ -157,27 +166,7 @@ public class Main extends Canvas {
     }
 
     public void Ticks() {
-        teclado.update();
-        if (enMenu) {
-            inicio_menu.update(teclado);
-            if (teclado.enter) {
-                if (inicio_menu.getSeleccion() == 0) {
-                    Ventana.setVisible(false);
-                    enMenu = false;
-                    try {
-                        Game();
-                        Start();
-                    Ventana.setVisible(true);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else if (inicio_menu.getSeleccion() == 1) {
-                    System.exit(0);
-                }
-            }
-        } else {
-            Update();
-        }
+        Update();
     }
 
     public void Start() {
@@ -187,11 +176,60 @@ public class Main extends Canvas {
 
     public void Ecenas() throws IOException {
         lvl_desierto = new level_00_desierto(spriteSheet, teclado, tiempo);
+        inicio_menu = new Inicio_menu(0, 0); // Inicializar el menú de inicio
+        System.out.println("Escenas inicializadas");
     }
 
     public void Update() {
-        if (!enMenu) {
-            lvl_desierto.update();
+        teclado.update();
+        
+        if (delayEnter > 0) { // Decrementar el delay si es mayor que 0
+            delayEnter--;
+            return;
+        }
+        
+        switch (estadoJuego) {
+            case MENU:
+                inicio_menu.update(teclado);
+                if (teclado.enter) {
+                    if (inicio_menu.getSeleccion() == 0) { // Jugar
+                        estadoJuego = EstadoJuego.JUEGO;
+                        tiempo.iniciar(); // Iniciar el tiempo cuando el juego comienza
+                        System.out.println("Cambio de estado: " + estadoJuego);
+                    } else if (inicio_menu.getSeleccion() == 1) { // Salir
+                        System.exit(0);
+                    }
+                    teclado.enter = false; // Asegurarse de que enter se resetee después de la selección
+                }
+                break;
+            case JUEGO:
+                if (teclado.pausa) {
+                    estadoJuego = EstadoJuego.PAUSA;
+                    teclado.pausa = false; // Resetear estado de la tecla de pausa
+                    System.out.println("Cambio de estado: " + estadoJuego);
+                } else {
+                    if (!lvl_desierto.isGameOver()) {
+                        lvl_desierto.update();
+                    } else {
+                        // Permitir reiniciar el nivel con ENTER
+                        lvl_desierto.update();
+                    }
+                }
+                break;
+            case PAUSA:
+                lvl_desierto.getPausa().update(teclado);
+                if (teclado.enter) {
+                    if (lvl_desierto.getPausa().getSeleccion() == 0) { // Reanudar
+                        estadoJuego = EstadoJuego.JUEGO;
+                        System.out.println("Cambio de estado: " + estadoJuego);
+                    } else if (lvl_desierto.getPausa().getSeleccion() == 1) { // Salir al Menú Principal
+                        estadoJuego = EstadoJuego.MENU;
+                        delayEnter = 60; // Establecer el delay para prevenir selección inmediata
+                        System.out.println("Cambio de estado: " + estadoJuego);
+                    }
+                    teclado.enter = false; // Asegurarse de que enter se resetee después de la selección
+                }
+                break;
         }
     }
 
@@ -214,10 +252,23 @@ public class Main extends Canvas {
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, getWidth(), getHeight());
 
-        if (enMenu) {
-            inicio_menu.render(g);
-        } else {
-            lvl_desierto.render(g);
+        switch (estadoJuego) {
+            case MENU:
+                if (inicio_menu != null) {
+                    inicio_menu.render(g); // Renderizar el menú de inicio
+                }
+                break;
+            case JUEGO:
+                if (lvl_desierto != null) {
+                    lvl_desierto.render(g);
+                }
+                break;
+            case PAUSA:
+                if (lvl_desierto != null) {
+                    lvl_desierto.render(g);
+                    lvl_desierto.getPausa().render(g); // Renderizar el menú de pausa
+                }
+                break;
         }
 
         g.dispose();
@@ -229,10 +280,4 @@ public class Main extends Canvas {
         main.Game();
         main.Start();
     }
-
-
-
-
-
-
 }

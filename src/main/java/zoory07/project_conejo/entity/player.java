@@ -18,7 +18,7 @@ public class player {
     private int width, height;
     private int x, y;
     public teclado teclado;
-    public int velocidad = 8;
+    public int velocidad = 13;
     private hitbox hitbox;
     private boolean mostrarHitbox = false; // Algo temporal para el debug
     public sombra_player sombra;

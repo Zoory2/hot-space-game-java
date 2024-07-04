@@ -11,17 +11,14 @@ import main.java.zoory07.project_conejo.entity.piedra;
 import main.java.zoory07.project_conejo.imagen.SpriteSheet;
 import main.java.zoory07.project_conejo.entity.player;
 import main.java.zoory07.project_conejo.game.teclado;
-import main.java.zoory07.project_conejo.imagen.fondo.img_desierto;
+import main.java.zoory07.project_conejo.imagen.img_desierto;
 import main.java.zoory07.project_conejo.scenes.CollisionManager;
 import main.java.zoory07.project_conejo.scenes.evento.DiseñoDeDificultad_level00.AlazarCactus;
 import main.java.zoory07.project_conejo.scenes.evento.DiseñoDeDificultad_level00.GestionDePatronesDeEventos;
 import main.java.zoory07.project_conejo.scenes.evento.EventoColision;
 import main.java.zoory07.project_conejo.scenes.evento.reinicio_level;
 import main.java.zoory07.project_conejo.scenes.evento.tiempo;
-
-
-
-
+import main.java.zoory07.project_conejo.scenes.menus.menu_pausa;
 
 public class level_00_desierto {
     private SpriteSheet spritesheet;
@@ -37,6 +34,8 @@ public class level_00_desierto {
     private EventoColision EventoColision;
     private boolean GameOver;
     private reinicio_level reinicioLevel;
+    private menu_pausa pausa;
+    private boolean enPausa;
 
     public level_00_desierto(SpriteSheet spritesheet, teclado teclado, tiempo tiempo) throws IOException {
         this.spritesheet = spritesheet;
@@ -49,6 +48,9 @@ public class level_00_desierto {
 
         this.reinicioLevel = new reinicio_level(spritesheet, teclado, tiempo);
         this.reinicioLevel.setNivel(this);
+
+        this.pausa = new menu_pausa(0, 0); // Inicializar el menú de pausa
+        this.enPausa = false;
 
         inicializarNivel();
     }
@@ -84,19 +86,25 @@ public class level_00_desierto {
         inicializarNivel();
         tiempo.reiniciar();
         GameOver = false;
-        System.out.println("Nivel reiniciado en level_00_desierto"); // Mensaje de depuración
+        System.out.println("Nivel reiniciado en level_00_desierto"); 
     }
 
     public void update() {
         teclado.update(); // Actualizar el estado del teclado siempre
-        if (!GameOver) {
+
+        if (teclado.pausa) { 
+            enPausa = !enPausa;
+            teclado.pausa = false; // Resetear estado de la tecla de pausa
+        }
+
+        if (!enPausa && !GameOver) {
             AlazarCactus.update(player);
             AlazarCactus.checkCollisionsWithPlayer(player);
             player.update();
             collisionManager.checkCollisions();
             GestionDePatronesDeEventos.update();
 
-            // Añadir cactus a cactusList después de generarlos
+            
             for (piedra c : AlazarCactus.getCactusList()) {
                 if (!cactusList.contains(c)) {
                     cactusList.add(c);
@@ -109,9 +117,11 @@ public class level_00_desierto {
                 GameOver = true;
                 System.out.println("Game Over"); // Mensaje de depuración
             }
-        } else {
+        } else if (GameOver) {
             // Si GameOver es verdadero, verificar si la tecla ENTER está presionada
             reinicioLevel.reiniciar();
+        } else if (enPausa) {
+            pausa.update(teclado); // Actualizar el menú de pausa
         }
     }
 
@@ -140,6 +150,9 @@ public class level_00_desierto {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 50));
             g.drawString("GAME OVER", 300, 300); // Ajustar la posición
+            g.drawString("Reiniciar(Enter)", 250, 350);
+        } else if (enPausa) {
+            pausa.render(g); // Renderizar el menú de pausa
         }
     }
 
@@ -147,6 +160,7 @@ public class level_00_desierto {
         return GameOver;
     }
 
-
-
+    public menu_pausa getPausa() {
+        return pausa;
+    }
 }
